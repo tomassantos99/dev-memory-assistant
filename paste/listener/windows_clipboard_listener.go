@@ -1,10 +1,11 @@
 package listener
 
 import (
+	"context"
 	"errors"
+	"github.com/tomassantos99/dev-memory-assistant/paste/pkg"
 	"syscall"
 	"unsafe"
-	"github.com/tomassantos99/dev-memory-assistant/paste/handler"
 )
 
 // I have no idea wtf is going on here, but this is the code I found with the help of my two best friends, Google and ChatGPT.
@@ -15,7 +16,7 @@ const (
 	WM_CLIPBOARDUPDATE = 0x031D
 )
 
-var globalClipboardHandler *handler.ClipboardHandler
+var gobalClipboardHandlerChannel chan string
 
 type WNDCLASSEX struct {
 	cbSize        uint32
@@ -33,12 +34,7 @@ type WNDCLASSEX struct {
 }
 
 func onSysMessage(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
-	user32 := syscall.MustLoadDLL("user32.dll")
 	if msg == WM_CLIPBOARDUPDATE {
-		openClipboard := user32.MustFindProc("OpenClipboard")
-		getClipboardData := user32.MustFindProc("GetClipboardData")
-		closeClipboard := user32.MustFindProc("CloseClipboard")
-
 		const CF_UNICODETEXT = 13
 
 		openClipboard.Call(0)
@@ -46,31 +42,18 @@ func onSysMessage(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 		if h != 0 {
 			ptr := uintptr(h)
 			text := syscall.UTF16ToString((*[1 << 20]uint16)(unsafe.Pointer(ptr))[:])
-			globalClipboardHandler.ClipboardMessages <- text
+			gobalClipboardHandlerChannel <- text
 		}
 		closeClipboard.Call()
 	}
 	// Call default window procedure
 
-	defProc := user32.MustFindProc("DefWindowProcW")
 	ret, _, _ := defProc.Call(hwnd, uintptr(msg), wParam, lParam)
 	return ret
 }
 
-func ListenWindowsClipboardUpdates(clipboardHandler *handler.ClipboardHandler) {
-	globalClipboardHandler = clipboardHandler
-
-	user32 := syscall.MustLoadDLL("user32.dll")
-	defer user32.Release()
-
-	kernel32 := syscall.MustLoadDLL("kernel32.dll")
-	defer kernel32.Release()
-
-	registerClassEx := user32.MustFindProc("RegisterClassExW")
-	createWindowEx := user32.MustFindProc("CreateWindowExW")
-	addClipboardFormatListener := user32.MustFindProc("AddClipboardFormatListener")
-	getMessage := user32.MustFindProc("GetMessageW")
-	dispatchMessage := user32.MustFindProc("DispatchMessageW")
+func ListenWindowsClipboardUpdates(ctx context.Context, clipboardHandlerChannel chan string) {
+	gobalClipboardHandlerChannel = clipboardHandlerChannel
 
 	className, err := syscall.UTF16PtrFromString("WindowsClipboardListener")
 	if err != nil {
@@ -105,10 +88,12 @@ func ListenWindowsClipboardUpdates(clipboardHandler *handler.ClipboardHandler) {
 	addClipboardFormatListener.Call(hwnd)
 
 	var msg [56]byte // MSG struct is 56 bytes on 64-bit Windows
+
+	pkg.HandleContext(ctx) // Post quit message to current thread on context cancellation
 	for {
 		ret, _, _ := getMessage.Call(uintptr(unsafe.Pointer(&msg[0])), hwnd, 0, 0)
 		if ret == 0 {
-			break // WM_QUIT
+			return // WM_QUIT
 		}
 		dispatchMessage.Call(uintptr(unsafe.Pointer(&msg[0])))
 	}
