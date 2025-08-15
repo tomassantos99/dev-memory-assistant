@@ -2,9 +2,9 @@ package listener
 
 import (
 	"errors"
-	"fmt"
 	"syscall"
 	"unsafe"
+	"github.com/tomassantos99/dev-memory-assistant/paste/handler"
 )
 
 // I have no idea wtf is going on here, but this is the code I found with the help of my two best friends, Google and ChatGPT.
@@ -14,6 +14,8 @@ import (
 const (
 	WM_CLIPBOARDUPDATE = 0x031D
 )
+
+var globalClipboardHandler *handler.ClipboardHandler
 
 type WNDCLASSEX struct {
 	cbSize        uint32
@@ -44,7 +46,7 @@ func onSysMessage(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 		if h != 0 {
 			ptr := uintptr(h)
 			text := syscall.UTF16ToString((*[1 << 20]uint16)(unsafe.Pointer(ptr))[:])
-			fmt.Println("Clipboard updated! Content:", text) // TODO: Send to a routine through a chan to store it on a sqlite database
+			globalClipboardHandler.ClipboardMessages <- text
 		}
 		closeClipboard.Call()
 	}
@@ -55,7 +57,9 @@ func onSysMessage(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 	return ret
 }
 
-func ListenWindowsClipboardUpdates() {
+func ListenWindowsClipboardUpdates(clipboardHandler *handler.ClipboardHandler) {
+	globalClipboardHandler = clipboardHandler
+
 	user32 := syscall.MustLoadDLL("user32.dll")
 	defer user32.Release()
 
