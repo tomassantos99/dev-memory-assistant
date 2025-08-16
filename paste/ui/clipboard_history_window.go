@@ -26,6 +26,24 @@ type ClipboardModel struct {
 	items []string
 }
 
+type uniformStyler struct {
+    h    int
+    font *walk.Font
+	model walk.ListModel
+}
+
+func (s *uniformStyler) ItemHeightDependsOnWidth() bool { return false }
+func (s *uniformStyler) DefaultItemHeight() int         { return s.h }
+func (s *uniformStyler) ItemHeight(index, width int) int { return s.h }
+func (s *uniformStyler) StyleItem(st *walk.ListItemStyle) {
+    st.DrawBackground()
+
+    if s.model != nil {
+        text := fmt.Sprint(s.model.Value(st.Index()))
+        st.DrawText(text, st.Bounds(), walk.TextLeft|walk.TextVCenter|walk.TextSingleLine|walk.TextEndEllipsis)
+    }
+}
+
 func NewEnvModel() *ClipboardModel {
 	return &ClipboardModel{items: []string{}}
 }
@@ -34,7 +52,7 @@ func (m *ClipboardModel) ItemCount() int {
 	return len(m.items)
 }
 
-func (m *ClipboardModel) Value(index int) interface{} {
+func (m *ClipboardModel) Value(index int) any {
 	return pkg.CropString(m.items[index], 80)
 }
 
@@ -48,6 +66,11 @@ func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *Histo
 	var window = &HistoryWindow{
 		model:           NewEnvModel(),
 		onItemSelection: onItemSelection,
+	}
+
+	var font, fontErr =  walk.NewFont("Segoe UI", 11, 0)
+	if fontErr != nil {
+		panic(fontErr)
 	}
 
 	var err = MainWindow{
@@ -64,6 +87,7 @@ func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *Histo
 						Model:                 window.model,
 						OnCurrentIndexChanged: window.onCurrentIndexChanged,
 						OnItemActivated:       window.onItemActivated,
+						ItemStyler:&uniformStyler{h: 28, font: font, model: window.model},
 					},
 					TextEdit{
 						AssignTo: &window.te,
@@ -95,6 +119,8 @@ func (w *HistoryWindow) ShowHistoryWindow(items []string) {
 	w.Mw.Synchronize(func() {
 
 		w.model.SetItems(items)
+
+		w.lb.SetCurrentIndex(0)
 
 		w.Mw.Show()
 
