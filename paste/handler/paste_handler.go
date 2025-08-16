@@ -1,22 +1,43 @@
 package handler
 
 import (
-	"github.com/tomassantos99/dev-memory-assistant/paste/ui"
+	"runtime"
+	"time"
+	"github.com/atotto/clipboard"
+	"github.com/micmonay/keybd_event"
 )
 
+func PasteContent(content string) error {
+    oldClip, err := clipboard.ReadAll()
+    if err != nil {
+        return err
+    }
 
-
-type PasteHandler struct {
-	window *ui.HistoryWindow
-}
-
-func NewPasteHandler(window *ui.HistoryWindow) *PasteHandler {
-	return &PasteHandler{
-		window: window,
+	if err := clipboard.WriteAll(content); err != nil {
+		return err
 	}
-}
 
-func (p *PasteHandler) HandlePaste() {
-	items := []string{"First", "Second", "Third"} // TODO: Replace with actual clipboard data retrieval logic
-	p.window.ShowHistoryWindow(items) // TODO: abstract windows/unix ui
+	kb, err := keybd_event.NewKeyBonding()
+	if err != nil {
+		return err
+	}
+
+	kb.SetKeys(keybd_event.VK_V)
+
+	switch runtime.GOOS {
+	case "darwin":
+		kb.HasSuper(true)
+	default:
+		kb.HasCTRL(true)
+	}
+
+	kb.Launching()
+
+    time.Sleep(50 *time.Millisecond)
+
+    if err := clipboard.WriteAll(oldClip); err != nil {
+		return err
+	}
+
+	return nil
 }

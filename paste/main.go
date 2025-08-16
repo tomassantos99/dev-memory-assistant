@@ -17,7 +17,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var window = ui.CreateHistoryWindow()
+	var window = ui.CreateHistoryWindow(handler.PasteContent)
 	defer window.Mw.Dispose()
 
 	// Intercept Ctrl+C (SIGINT) and SIGTERM
@@ -33,9 +33,9 @@ func main() {
 	}()
 
 	clipboardHandler := handler.NewClipboardHandler()
-	pasteHandler := handler.NewPasteHandler(window)
+	pasteHandler := handler.NewShortcutHandler(window)
 
-	go clipboardHandler.ClipboardMessageHandler(ctx)
+	go clipboardHandler.OnMessageHandler(ctx)
 
 	go listener.ListenWindowsClipboardUpdates(ctx, clipboardHandler)
 	go listener.ListenShortcuts(ctx, pasteHandler)

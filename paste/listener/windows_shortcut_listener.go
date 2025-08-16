@@ -15,7 +15,7 @@ const (
 	WM_QUIT     = 0
 )
 
-func ListenShortcuts(ctx context.Context, pasteHander *handler.PasteHandler) error {
+func ListenShortcuts(ctx context.Context, pasteHander *handler.ShortcutHandler) error {
 	// Register Ctrl+Shift+V as a global hotkey (id=1)
 	ret, _, err := registerHotKey.Call(0, 1, MOD_CONTROL|MOD_SHIFT, VK_V)
 	if ret == 0 {
@@ -32,8 +32,9 @@ func ListenShortcuts(ctx context.Context, pasteHander *handler.PasteHandler) err
 		}
 		msgType := *(*uint32)(unsafe.Pointer(&msg[8]))
 		if msgType == WM_HOTKEY {
-			pasteHander.HandlePaste()
+			pasteHander.HandleClipboardHistoryWindowShortcut()
 		}
 	}
 	return nil
 }
+

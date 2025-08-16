@@ -15,7 +15,7 @@ func NewClipboardHandler() *ClipboardHandler {
 	}
 }
 
-func (clipboardHandler *ClipboardHandler) ClipboardMessageHandler(ctx context.Context) {
+func (clipboardHandler *ClipboardHandler) OnMessageHandler(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
