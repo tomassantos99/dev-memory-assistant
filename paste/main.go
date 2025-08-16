@@ -18,6 +18,7 @@ func main() {
 	defer cancel()
 
 	var window = ui.CreateHistoryWindow()
+	defer window.Mw.Dispose()
 
 	// Intercept Ctrl+C (SIGINT) and SIGTERM
 	sigs := make(chan os.Signal, 1)
@@ -26,7 +27,7 @@ func main() {
 		sig := <-sigs
 		fmt.Println("Received signal:", sig)
 		window.Mw.Synchronize(func() {
-			window.Mw.Dispose() // this will unblock Run()
+			window.Mw.Dispose()
 		})
 		cancel()
 	}()

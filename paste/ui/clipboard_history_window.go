@@ -48,7 +48,6 @@ func (w *HistoryWindow) ShowHistoryWindow(items []string) {
 	}
 
 	w.Mw.Synchronize(func() {
-		fmt.Println("Showing history window with items:", items)
 
 		var modelErr = w.Lb.SetModel(items)
 		if modelErr != nil {
