@@ -3,9 +3,10 @@ package listener
 import (
 	"context"
 	"errors"
-	"github.com/tomassantos99/dev-memory-assistant/paste/pkg"
 	"syscall"
 	"unsafe"
+	"github.com/tomassantos99/dev-memory-assistant/paste/handler"
+	"github.com/tomassantos99/dev-memory-assistant/paste/pkg"
 )
 
 // I have no idea wtf is going on here, but this is the code I found with the help of my two best friends, Google and ChatGPT.
@@ -15,8 +16,6 @@ import (
 const (
 	WM_CLIPBOARDUPDATE = 0x031D
 )
-
-var gobalClipboardHandlerChannel chan string
 
 type WNDCLASSEX struct {
 	cbSize        uint32
@@ -33,27 +32,28 @@ type WNDCLASSEX struct {
 	hIconSm       uintptr
 }
 
-func onSysMessage(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
-	if msg == WM_CLIPBOARDUPDATE {
-		const CF_UNICODETEXT = 13
+func createOnSysMessageCallback(clipboardHandler *handler.ClipboardHandler) func(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
+	return func(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
+		if msg == WM_CLIPBOARDUPDATE {
+			const CF_UNICODETEXT = 13
 
-		openClipboard.Call(0)
-		h, _, _ := getClipboardData.Call(CF_UNICODETEXT)
-		if h != 0 {
-			ptr := uintptr(h)
-			text := syscall.UTF16ToString((*[1 << 20]uint16)(unsafe.Pointer(ptr))[:])
-			gobalClipboardHandlerChannel <- text
+			openClipboard.Call(0)
+			h, _, _ := getClipboardData.Call(CF_UNICODETEXT)
+			if h != 0 {
+				ptr := uintptr(h)
+				text := syscall.UTF16ToString((*[1 << 20]uint16)(unsafe.Pointer(ptr))[:])
+				clipboardHandler.ClipboardMessages <- text
+			}
+			closeClipboard.Call()
 		}
-		closeClipboard.Call()
-	}
-	// Call default window procedure
+		// Call default window procedure
 
-	ret, _, _ := defProc.Call(hwnd, uintptr(msg), wParam, lParam)
-	return ret
+		ret, _, _ := defProc.Call(hwnd, uintptr(msg), wParam, lParam)
+		return ret
+	}
 }
 
-func ListenWindowsClipboardUpdates(ctx context.Context, clipboardHandlerChannel chan string) {
-	gobalClipboardHandlerChannel = clipboardHandlerChannel
+func ListenWindowsClipboardUpdates(ctx context.Context, clipboardHandler *handler.ClipboardHandler) {
 
 	className, err := syscall.UTF16PtrFromString("WindowsClipboardListener")
 	if err != nil {
@@ -64,7 +64,7 @@ func ListenWindowsClipboardUpdates(ctx context.Context, clipboardHandlerChannel 
 	wndClass := WNDCLASSEX{
 		cbSize:        uint32(unsafe.Sizeof(WNDCLASSEX{})),
 		style:         0,
-		lpfnWndProc:   syscall.NewCallback(onSysMessage),
+		lpfnWndProc:   syscall.NewCallback(createOnSysMessageCallback(clipboardHandler)),
 		cbClsExtra:    0,
 		cbWndExtra:    0,
 		hInstance:     0,

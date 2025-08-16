@@ -20,9 +20,22 @@ func main() {
     		message TEXT,
     		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		);
+
+		CREATE TRIGGER keep_last_100_rows
+		AFTER INSERT ON clipboard
+		WHEN (SELECT COUNT(*) FROM clipboard) > 100
+		BEGIN
+    		DELETE FROM clipboard
+    		WHERE id IN (
+        		SELECT id
+        		FROM clipboard
+        		ORDER BY id ASC
+        		LIMIT 1
+    		);
+		END;
 	`)
 
 	if err != nil {
-		fmt.Println("Error creating table:", err)
+		fmt.Println("Error creating tables/triggers:", err)
 	}
 }
