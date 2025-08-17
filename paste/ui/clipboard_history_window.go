@@ -5,6 +5,7 @@ import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"github.com/tomassantos99/dev-memory-assistant/paste/pkg"
+	"strings"
 	"syscall"
 )
 
@@ -18,12 +19,14 @@ type HistoryWindow struct {
 	lb              *walk.ListBox
 	te              *walk.TextEdit
 	model           *ClipboardModel
+	textSearch      *walk.LineEdit
 	onItemSelection func(selectedItem string) error
 }
 
 type ClipboardModel struct {
 	walk.ListModelBase
-	items []string
+	items        []string
+	displayItems []string
 }
 
 type uniformStyler struct {
@@ -45,20 +48,27 @@ func (s *uniformStyler) StyleItem(st *walk.ListItemStyle) {
 }
 
 func NewEnvModel() *ClipboardModel {
-	return &ClipboardModel{items: []string{}}
+	return &ClipboardModel{
+		items:        []string{},
+		displayItems: []string{},
+	}
 }
 
 func (m *ClipboardModel) ItemCount() int {
-	return len(m.items)
+	return len(m.displayItems)
 }
 
 func (m *ClipboardModel) Value(index int) any {
-	return pkg.CropString(m.items[index], 80)
+	return pkg.CropString(m.displayItems[index], 80)
 }
 
 func (m *ClipboardModel) SetItems(items []string) {
-	m.items = items
+	m.displayItems = items
 	m.PublishItemsReset()
+}
+
+func (m *ClipboardModel) SetOriginalItems(items []string) {
+	m.items = items
 }
 
 func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *HistoryWindow {
@@ -80,13 +90,25 @@ func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *Histo
 		Layout:   VBox{},
 		Visible:  false,
 		Children: []Widget{
+			Label{
+				Text: "Search:",
+			},
+			LineEdit{
+				AssignTo:      &window.textSearch,
+				Font:          Font{Family: "Segoe UI", PointSize: 11},
+				StretchFactor: 0,
+				OnTextChanged: window.onSearchInput,
+				OnKeyDown:     window.onSearchKeyDown,
+			},
 			HSplitter{
+				StretchFactor: 1,
 				Children: []Widget{
 					ListBox{
 						AssignTo:              &window.lb,
 						Model:                 window.model,
 						OnCurrentIndexChanged: window.onCurrentIndexChanged,
 						OnItemActivated:       window.onItemActivated,
+						OnKeyDown:             window.onLbKeyDown,
 						ItemStyler:            &uniformStyler{h: 28, font: font, model: window.model},
 					},
 					TextEdit{
@@ -125,17 +147,22 @@ func (w *HistoryWindow) ShowHistoryWindow(items []string) {
 
 	w.Mw.Synchronize(func() {
 
-		w.model.SetItems(items)
-
-		w.lb.SetCurrentIndex(0)
-
-		w.Mw.Show()
+		w.model.SetOriginalItems(items) // originalItems
+		w.model.SetItems(items)         // displayItems
 
 		if btpErr := w.Mw.BringToTop(); btpErr != nil {
 			panic(btpErr)
 		}
 
 		procSetForegroundWindow.Call(uintptr(w.Mw.Handle()))
+
+		w.lb.SetCurrentIndex(0)
+
+		if err := w.lb.SetFocus(); err != nil {
+			panic(err)
+		}
+
+		w.Mw.Show()
 	})
 }
 
@@ -165,4 +192,30 @@ func (w *HistoryWindow) onCurrentIndexChanged() {
 
 	var item = w.model.items[index]
 	w.te.SetText(item)
+}
+
+func (w *HistoryWindow) onSearchInput() {
+	var filteredItems []string
+
+	for _, item := range w.model.items {
+		if strings.Contains(item, w.textSearch.Text()) {
+			filteredItems = append(filteredItems, item)
+		}
+	}
+
+	w.model.SetItems(filteredItems)
+	w.model.PublishItemsReset()
+}
+
+func (w *HistoryWindow) onSearchKeyDown(key walk.Key) {
+	if key == walk.KeyDown {
+		w.lb.SetFocus()
+		w.lb.SetCurrentIndex(0)
+	}
+}
+
+func (w *HistoryWindow) onLbKeyDown(key walk.Key) {
+	if (walk.ModifiersDown() == walk.ModControl && key == walk.KeyS) || (key == walk.KeyUp && w.lb.CurrentIndex() == 0) {
+		w.textSearch.SetFocus()
+	}
 }
