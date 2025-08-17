@@ -2,10 +2,10 @@ package ui
 
 import (
 	"fmt"
-	"syscall"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"github.com/tomassantos99/dev-memory-assistant/paste/pkg"
+	"syscall"
 )
 
 var (
@@ -27,21 +27,21 @@ type ClipboardModel struct {
 }
 
 type uniformStyler struct {
-    h    int
-    font *walk.Font
+	h     int
+	font  *walk.Font
 	model walk.ListModel
 }
 
-func (s *uniformStyler) ItemHeightDependsOnWidth() bool { return false }
-func (s *uniformStyler) DefaultItemHeight() int         { return s.h }
+func (s *uniformStyler) ItemHeightDependsOnWidth() bool  { return false }
+func (s *uniformStyler) DefaultItemHeight() int          { return s.h }
 func (s *uniformStyler) ItemHeight(index, width int) int { return s.h }
 func (s *uniformStyler) StyleItem(st *walk.ListItemStyle) {
-    st.DrawBackground()
+	st.DrawBackground()
 
-    if s.model != nil {
-        text := fmt.Sprint(s.model.Value(st.Index()))
-        st.DrawText(text, st.Bounds(), walk.TextLeft|walk.TextVCenter|walk.TextSingleLine|walk.TextEndEllipsis)
-    }
+	if s.model != nil {
+		text := fmt.Sprint(s.model.Value(st.Index()))
+		st.DrawText(text, st.Bounds(), walk.TextLeft|walk.TextVCenter|walk.TextSingleLine|walk.TextEndEllipsis)
+	}
 }
 
 func NewEnvModel() *ClipboardModel {
@@ -68,7 +68,7 @@ func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *Histo
 		onItemSelection: onItemSelection,
 	}
 
-	var font, fontErr =  walk.NewFont("Segoe UI", 11, 0)
+	var font, fontErr = walk.NewFont("Segoe UI", 11, 0)
 	if fontErr != nil {
 		panic(fontErr)
 	}
@@ -87,7 +87,7 @@ func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *Histo
 						Model:                 window.model,
 						OnCurrentIndexChanged: window.onCurrentIndexChanged,
 						OnItemActivated:       window.onItemActivated,
-						ItemStyler:&uniformStyler{h: 28, font: font, model: window.model},
+						ItemStyler:            &uniformStyler{h: 28, font: font, model: window.model},
 					},
 					TextEdit{
 						AssignTo: &window.te,
@@ -107,6 +107,13 @@ func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *Histo
 		*canceled = true // prevent destruction on user close
 		window.Mw.SetVisible(false)
 	})
+
+	action := walk.NewAction()
+	action.SetShortcut(walk.Shortcut{Key: walk.KeyEscape})
+	action.Triggered().Attach(func() {
+		window.Mw.SetVisible(false)
+	})
+	window.Mw.ShortcutActions().Add(action)
 
 	return window
 }
