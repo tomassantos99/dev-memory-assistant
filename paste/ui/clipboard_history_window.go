@@ -2,11 +2,14 @@ package ui
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"syscall"
+
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"github.com/tomassantos99/dev-memory-assistant/paste/pkg"
-	"strings"
-	"syscall"
 )
 
 var (
@@ -43,7 +46,12 @@ func (s *uniformStyler) StyleItem(st *walk.ListItemStyle) {
 
 	if s.model != nil {
 		text := fmt.Sprint(s.model.Value(st.Index()))
-		st.DrawText(text, st.Bounds(), walk.TextLeft|walk.TextVCenter|walk.TextSingleLine|walk.TextEndEllipsis)
+
+		bounds := st.Bounds()
+		bounds.X += 8
+		bounds.Width -= 8
+
+		st.DrawText(text, bounds, walk.TextLeft|walk.TextVCenter|walk.TextSingleLine|walk.TextEndEllipsis)
 	}
 }
 
@@ -83,6 +91,18 @@ func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *Histo
 		panic(fontErr)
 	}
 
+	exePath, pathErr := os.Executable()
+	if pathErr != nil {
+		panic(pathErr)
+	}
+	exeDir := filepath.Dir(exePath)
+	iconPath := filepath.Join(exeDir, "paste", "ui", "clipboard.ico")
+
+	var icon, iconErr = walk.NewIconFromFile(iconPath)
+	if iconErr != nil {
+		panic(iconErr)
+	}
+
 	var err = MainWindow{
 		AssignTo: &window.Mw,
 		Title:    "Clipboard History",
@@ -119,10 +139,13 @@ func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *Histo
 			},
 		},
 	}.Create()
-
 	if err != nil {
 		fmt.Println("Error creating history window:")
 		panic(err)
+	}
+
+	if setIconErr := window.Mw.SetIcon(icon); setIconErr != nil {
+		panic(setIconErr)
 	}
 
 	window.Mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
