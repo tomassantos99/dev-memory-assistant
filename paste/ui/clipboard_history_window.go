@@ -189,7 +189,7 @@ func (w *HistoryWindow) onItemActivated() {
 		return
 	}
 
-	var item = w.model.items[index]
+	var item = w.model.displayItems[index]
 	w.Mw.SetVisible(false)
 	err := w.onItemSelection(item)
 	if err != nil {
@@ -203,7 +203,7 @@ func (w *HistoryWindow) onCurrentIndexChanged() {
 		return
 	}
 
-	var item = w.model.items[index]
+	var item = w.model.displayItems[index]
 	w.te.SetText(item)
 }
 
