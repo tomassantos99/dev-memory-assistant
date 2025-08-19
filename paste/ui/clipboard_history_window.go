@@ -2,8 +2,8 @@ package ui
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
+	// "os"
+	// "path/filepath"
 	"strings"
 	"syscall"
 
@@ -91,14 +91,7 @@ func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *Histo
 		panic(fontErr)
 	}
 
-	exePath, pathErr := os.Executable()
-	if pathErr != nil {
-		panic(pathErr)
-	}
-	exeDir := filepath.Dir(exePath)
-	iconPath := filepath.Join(exeDir, "paste", "ui", "clipboard.ico")
-
-	var icon, iconErr = walk.NewIconFromFile(iconPath)
+	var icon, iconErr = walk.NewIconFromResource("CLIPBOARD_ICON")
 	if iconErr != nil {
 		panic(iconErr)
 	}
@@ -109,6 +102,7 @@ func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *Histo
 		Size:     Size{Width: 1000, Height: 1000},
 		Layout:   VBox{},
 		Visible:  false,
+		Icon: icon,
 		Children: []Widget{
 			Label{
 				Text: "Search:",
@@ -142,10 +136,6 @@ func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *Histo
 	if err != nil {
 		fmt.Println("Error creating history window:")
 		panic(err)
-	}
-
-	if setIconErr := window.Mw.SetIcon(icon); setIconErr != nil {
-		panic(setIconErr)
 	}
 
 	window.Mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {

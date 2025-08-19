@@ -1,16 +1,15 @@
-package main
+package storage
 
 import (
 	"database/sql"
-	"fmt"
-
 	_ "modernc.org/sqlite"
+	"fmt"
 )
 
-func main() {
+func SetupDB() {
 	db, err := sql.Open("sqlite", "dev-memory-assistant.db")
 	if err != nil {
-		// handle error
+		panic(err)
 	}
 	defer db.Close()
 
@@ -21,7 +20,7 @@ func main() {
     		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		);
 
-		CREATE TRIGGER keep_last_100_rows
+		CREATE TRIGGER IF NOT EXISTS keep_last_100_rows
 		AFTER INSERT ON clipboard
 		WHEN (SELECT COUNT(*) FROM clipboard) > 100
 		BEGIN

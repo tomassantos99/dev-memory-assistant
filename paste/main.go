@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/tomassantos99/dev-memory-assistant/paste/handler"
+	"github.com/tomassantos99/dev-memory-assistant/paste/listener"
+	"github.com/tomassantos99/dev-memory-assistant/paste/storage"
+	"github.com/tomassantos99/dev-memory-assistant/paste/ui"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/tomassantos99/dev-memory-assistant/paste/handler"
-	"github.com/tomassantos99/dev-memory-assistant/paste/listener"
-	"github.com/tomassantos99/dev-memory-assistant/paste/ui"
 )
 
 func main() {
@@ -31,6 +31,8 @@ func main() {
 		})
 		cancel()
 	}()
+
+	storage.SetupDB()
 
 	clipboardHandler := handler.NewClipboardHandler()
 	pasteHandler := handler.NewShortcutHandler(window)

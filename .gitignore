@@ -1,6 +1,7 @@
 ### Go ###
 
 # Binaries for programs and plugins
+!exe/
 *.exe
 *.exe~
 *.dll
@@ -21,3 +22,6 @@ go.work
 
 # sqlite database files
 *.db
+
+# syso
+*.syso
