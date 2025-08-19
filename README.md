@@ -32,7 +32,7 @@ Run:
 ./build.ps1
 ```
 
-This automatically compiles windows resources and builds the executables. This also creates an `exe` directory with the executables.
+This automatically compiles windows resources and builds the executables (installs winres if not found). This also creates an `exe` directory with the executables.
 The script builds the tool so it runs in the background. If you want to see it run on a console you can edit the script and remove `-ldflags="-H windowsgui"` from the build command.
 
 Optionally, you can build it manually (example for paste tool):
