@@ -81,22 +81,22 @@ func (m *ClipboardModel) SetOriginalItems(items []string) {
 
 func CreateHistoryWindow(onItemSelection func(selectedItem string) error) *HistoryWindow {
 
-	var window = &HistoryWindow{
+	window := &HistoryWindow{
 		model:           NewEnvModel(),
 		onItemSelection: onItemSelection,
 	}
 
-	var font, fontErr = walk.NewFont("Segoe UI", 11, 0)
+	font, fontErr := walk.NewFont("Segoe UI", 11, 0)
 	if fontErr != nil {
 		panic(fontErr)
 	}
 
-	var icon, iconErr = walk.NewIconFromResource("CLIPBOARD_ICON")
+	icon, iconErr := walk.NewIconFromResource("CLIPBOARD_ICON")
 	if iconErr != nil {
 		panic(iconErr)
 	}
 
-	var err = MainWindow{
+	err := MainWindow{
 		AssignTo: &window.Mw,
 		Title:    "Clipboard History",
 		Size:     Size{Width: 1000, Height: 1000},
@@ -184,12 +184,12 @@ func (w *HistoryWindow) IsVisible() bool {
 }
 
 func (w *HistoryWindow) onItemActivated() {
-	var index = w.lb.CurrentIndex()
+	 index := w.lb.CurrentIndex()
 	if index < 0 {
 		return
 	}
 
-	var item = w.model.displayItems[index]
+	item := w.model.displayItems[index]
 	w.Mw.SetVisible(false)
 	err := w.onItemSelection(item)
 	if err != nil {
@@ -198,12 +198,12 @@ func (w *HistoryWindow) onItemActivated() {
 }
 
 func (w *HistoryWindow) onCurrentIndexChanged() {
-	var index = w.lb.CurrentIndex()
+	index := w.lb.CurrentIndex()
 	if index < 0 {
 		return
 	}
 
-	var item = w.model.displayItems[index]
+	item := w.model.displayItems[index]
 	w.te.SetText(item)
 }
 

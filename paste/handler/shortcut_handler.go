@@ -23,7 +23,7 @@ func (p *ShortcutHandler) HandleClipboardHistoryWindowShortcut() {
 		return
 	}
 
-	var messages, err = storage.GetLastClipboardMessages(100)
+	messages, err := storage.GetLastClipboardMessages(100)
 	if err != nil {
 		fmt.Println("Error fetching clipboard messages:", err)
 		return

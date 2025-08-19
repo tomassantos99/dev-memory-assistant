@@ -17,7 +17,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var window = ui.CreateHistoryWindow(handler.PasteContent)
+	window := ui.CreateHistoryWindow(handler.PasteContent)
 	defer window.Mw.Dispose()
 
 	// Intercept Ctrl+C (SIGINT) and SIGTERM
