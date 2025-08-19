@@ -2,12 +2,18 @@ package storage
 
 import (
 	"database/sql"
-	_ "modernc.org/sqlite"
 	"fmt"
+	"github.com/tomassantos99/dev-memory-assistant/paste/pkg"
+	_ "modernc.org/sqlite"
 )
 
 func SetupDB() {
-	db, err := sql.Open("sqlite", "dev-memory-assistant.db")
+	dbPath, err := pkg.GetPathRelativeToExe("dev-memory-assistant.db")
+	if err != nil {
+		panic(err)
+	}
+
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		panic(err)
 	}

@@ -2,11 +2,13 @@ package storage
 
 import (
 	"database/sql"
+
+	"github.com/tomassantos99/dev-memory-assistant/paste/pkg"
 	_ "modernc.org/sqlite"
 )
 
 func SaveClipboardMessage(message string) error {
-	db, err := sql.Open("sqlite", "dev-memory-assistant.db")
+	db, err := openDB()
 	if err != nil {
 		return err
 	}
@@ -24,7 +26,7 @@ func SaveClipboardMessage(message string) error {
 }
 
 func GetLastClipboardMessages(limit int) ([]string, error) {
-	db, err := sql.Open("sqlite", "dev-memory-assistant.db")
+	db, err := openDB()
 	if err != nil {
 		return nil, err
 	}
@@ -51,3 +53,11 @@ func GetLastClipboardMessages(limit int) ([]string, error) {
 	return messages, nil
 }
 
+func openDB() (*sql.DB, error) {
+	dbPath, err := pkg.GetPathRelativeToExe("dev-memory-assistant.db")
+	if err != nil {
+		panic(err)
+	}
+
+	return sql.Open("sqlite", dbPath)
+}

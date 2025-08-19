@@ -31,7 +31,7 @@ foreach ($app in $apps) {
     # Build the Go executable
     $exePath = "./exe/$($app.Name).exe"
     Write-Host "Compiling $($app.Name) to $exePath..."
-    go build -o $exePath "./$($app.Path)"
+    go build -ldflags="-H windowsgui" -o $exePath "./$($app.Path)"
 }
 
 Write-Host "All builds completed."
