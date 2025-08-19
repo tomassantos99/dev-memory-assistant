@@ -26,7 +26,7 @@ How to use paste:
 
 ### Building
 
-Run:
+Run (PowerShell):
 
 ```
 ./build.ps1
