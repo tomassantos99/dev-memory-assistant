@@ -29,7 +29,7 @@ func (p *ShortcutHandler) HandleClipboardHistoryWindowShortcut() {
 		return
 	}
 
-	p.window.ShowHistoryWindow(messages) // TODO: abstract windows/unix ui
+	p.window.ShowHistoryWindow(messages)
 }
 
 
